@@ -128,7 +128,32 @@ const mockAI = {
       const lastNames = ['Blackwood', 'Stormwind', 'Ironheart', 'Silverleaf', 'Dawnweaver', 'Nightshade'];
       
       return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-    }
+    },
+  
+    pluralize(word) {
+      // Special cases dictionary
+      const specialCases = {
+        'empire': 'empires',
+        'state': 'states',
+        'city': 'cities',
+        'country': 'countries',
+        'territory': 'territories',
+        'duchy': 'duchies',
+        'colony': 'colonies',
+        'municipality': 'municipalities',
+        'principality': 'principalities'
+      };
+
+      // Return from special cases if it exists
+      if (specialCases[word.toLowerCase()]) {
+        return specialCases[word.toLowerCase()];
+      }
+
+      // General rules
+      if (word.endsWith('s')) return word; // Already plural
+      if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
+      return word + 's';
+    },
   };
 
   export default mockAI;

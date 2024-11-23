@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Package, Loader, Edit2, Save, Plus, X, Code } from 'lucide-react';
+import mockAI from '../../utils/mockAI';
 
 export const CompletionScreen = ({ worldData, actions }) => {
   const [generatingInventory, setGeneratingInventory] = useState(false);
@@ -50,12 +51,6 @@ export const CompletionScreen = ({ worldData, actions }) => {
   const generateGameEngineJSON = () => {
     const timestamp = new Date().toISOString();
     
-    // Helper function to get plural form of a word
-    const pluralize = (word) => {
-      if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
-      return word + 's';
-    };
-    
     // Helper function to build the entity hierarchy
     const buildEntityHierarchy = (level, parentEntity = null) => {
       const entities = worldData.entities[level] || [];
@@ -80,7 +75,7 @@ export const CompletionScreen = ({ worldData, actions }) => {
         
         // If there's a next level, add its plural name as a key with nested entities
         if (nextLevel) {
-          const pluralKey = pluralize(nextLevel);
+          const pluralKey = mockAI.pluralize(nextLevel);
           entityData[pluralKey] = buildEntityHierarchy(nextLevel, entity);
         }
         
@@ -90,7 +85,7 @@ export const CompletionScreen = ({ worldData, actions }) => {
 
     // Start building from the top level
     const topLevel = worldData.hierarchy[0];
-    const pluralTopLevel = pluralize(topLevel);
+    const pluralTopLevel = mockAI.pluralize(topLevel);
     
     return {
       world: {
@@ -114,6 +109,36 @@ export const CompletionScreen = ({ worldData, actions }) => {
     };
   };
 
+  // Helper function to get all NPCs from the world data
+  const getAllNPCs = () => {
+    const npcs = [];
+    
+    const traverseEntities = (entities, location = []) => {
+      Object.entries(entities).forEach(([level, levelEntities]) => {
+        levelEntities.forEach(entity => {
+          if (entity.npcs) {
+            entity.npcs.forEach(npc => {
+              npcs.push({
+                ...npc,
+                location: [...location, entity.name]
+              });
+            });
+          }
+          
+          // Recursively check child entities
+          Object.entries(entity).forEach(([key, value]) => {
+            if (Array.isArray(value) && key !== 'npcs') {
+              traverseEntities({ [key]: value }, [...location, entity.name]);
+            }
+          });
+        });
+      });
+    };
+
+    traverseEntities({ [worldData.hierarchy[0]]: worldData.entities[worldData.hierarchy[0]] });
+    return npcs;
+  };
+
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -128,10 +153,41 @@ export const CompletionScreen = ({ worldData, actions }) => {
           <div className="mt-6">
             <h3 className="font-medium mb-2">World Hierarchy:</h3>
             <p className="text-gray-600 bg-gray-50 py-2 px-4 rounded-md inline-block">
-              {worldData.hierarchy.join(' → ')}
+              {worldData.hierarchy.map(level => mockAI.pluralize(level)).join(' → ')}
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-xl font-medium mb-4">Notable Characters</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {getAllNPCs().map((npc, index) => (
+            <div key={index} className="border rounded-lg p-4 hover:border-gray-300 transition-colors">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium">{npc.name}</h4>
+                  <p className="text-sm text-gray-600">{npc.role}</p>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {npc.location.join(' → ')}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">{npc.description}</p>
+              <div className="mt-3 space-y-1">
+                <p className="text-sm">
+                  <span className="text-gray-500">Personality:</span> {npc.personality}
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-500">Goal:</span> {npc.goal}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {getAllNPCs().length === 0 && (
+          <p className="text-gray-500 text-center py-4">No NPCs have been created yet.</p>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
