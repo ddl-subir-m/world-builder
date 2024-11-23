@@ -78,6 +78,56 @@ const mockAI = {
       }
       
       return inventory;
+    },
+  
+    async generateNPCs(entityType, entityName) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const roles = {
+        kingdoms: ['King', 'Queen', 'Royal Advisor', 'Court Wizard', 'General', 'High Priest'],
+        provinces: ['Governor', 'Sheriff', 'Local Hero', 'Merchant Leader', 'Militia Captain'],
+        cities: ['Mayor', 'Guard Captain', 'Guild Master', 'Tavern Keeper', 'Court Mage'],
+        default: ['Leader', 'Notable Resident', 'Mysterious Stranger', 'Local Champion']
+      };
+
+      const personalities = [
+        'wise and diplomatic',
+        'stern but fair',
+        'charismatic and ambitious',
+        'mysterious and calculating',
+        'honorable and brave',
+        'cunning and resourceful'
+      ];
+
+      const goals = [
+        'maintain peace and prosperity',
+        'expand their influence',
+        'protect ancient secrets',
+        'reform corrupt institutions',
+        'preserve traditional ways',
+        'seek powerful artifacts'
+      ];
+
+      const availableRoles = roles[entityType] || roles.default;
+      const role = availableRoles[Math.floor(Math.random() * availableRoles.length)];
+      const personality = personalities[Math.floor(Math.random() * personalities.length)];
+      const goal = goals[Math.floor(Math.random() * goals.length)];
+
+      return {
+        id: `npc-${Math.random().toString(36).substr(2, 9)}`,
+        name: `${this.generateName()}`,
+        role: role,
+        description: `A ${personality} ${role.toLowerCase()} of ${entityName} who seeks to ${goal}.`,
+        personality,
+        goal
+      };
+    },
+  
+    generateName() {
+      const firstNames = ['Aldrich', 'Beatrice', 'Cedric', 'Diana', 'Edmund', 'Freya', 'Gareth', 'Helena'];
+      const lastNames = ['Blackwood', 'Stormwind', 'Ironheart', 'Silverleaf', 'Dawnweaver', 'Nightshade'];
+      
+      return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { WorldCreation } from './WorldCreation';
 import AddLevelPrompt from './AddLevelPrompt';
 import { ChevronRight, Loader } from 'lucide-react';
+import { NPCManager } from './NPCManager';
 
 export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete }) => {
   const [editingEntity, setEditingEntity] = useState(null);
@@ -178,6 +179,14 @@ export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete })
                 )}
               </>
             )}
+            
+            <NPCManager
+              entity={entity}
+              entityType={state.currentLevel}
+              onNPCsUpdate={(npcs) => {
+                handleEntityUpdate(entity.id, { npcs });
+              }}
+            />
           </div>
         ))}
       </div>

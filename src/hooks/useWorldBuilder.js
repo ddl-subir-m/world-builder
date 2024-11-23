@@ -8,7 +8,8 @@ export const useWorldBuilder = () => {
     hierarchy: [],
     entities: {},
     associations: {},
-    inventory: []
+    inventory: [],
+    npcs: {} 
   });
   const [currentLevel, setCurrentLevel] = useState('world');
   const [isGenerating, setIsGenerating] = useState(false);

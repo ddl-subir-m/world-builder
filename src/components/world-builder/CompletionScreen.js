@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Package, Loader, Edit2, Save, Plus, X } from 'lucide-react';
+import { CheckCircle, Package, Loader, Edit2, Save, Plus, X, Code } from 'lucide-react';
 
 export const CompletionScreen = ({ worldData, actions }) => {
   const [generatingInventory, setGeneratingInventory] = useState(false);
@@ -10,6 +10,7 @@ export const CompletionScreen = ({ worldData, actions }) => {
     quantity: 1
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showJSON, setShowJSON] = useState(false);
 
   const handleGenerateInventory = async () => {
     setGeneratingInventory(true);
@@ -42,8 +43,75 @@ export const CompletionScreen = ({ worldData, actions }) => {
     setShowAddItem(false);
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveInventory = () => {
     setHasUnsavedChanges(false);
+  };
+
+  const generateGameEngineJSON = () => {
+    const timestamp = new Date().toISOString();
+    
+    // Helper function to get plural form of a word
+    const pluralize = (word) => {
+      if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
+      return word + 's';
+    };
+    
+    // Helper function to build the entity hierarchy
+    const buildEntityHierarchy = (level, parentEntity = null) => {
+      const entities = worldData.entities[level] || [];
+      
+      return entities.map(entity => {
+        // Find the next level in hierarchy
+        const levelIndex = worldData.hierarchy.indexOf(level);
+        const nextLevel = worldData.hierarchy[levelIndex + 1];
+        
+        // Build the base entity without id
+        const entityData = {
+          name: entity.name,
+          description: entity.description,
+          npcs: (entity.npcs || []).map(npc => ({
+            name: npc.name,
+            role: npc.role,
+            description: npc.description,
+            personality: npc.personality,
+            goal: npc.goal
+          }))
+        };
+        
+        // If there's a next level, add its plural name as a key with nested entities
+        if (nextLevel) {
+          const pluralKey = pluralize(nextLevel);
+          entityData[pluralKey] = buildEntityHierarchy(nextLevel, entity);
+        }
+        
+        return entityData;
+      });
+    };
+
+    // Start building from the top level
+    const topLevel = worldData.hierarchy[0];
+    const pluralTopLevel = pluralize(topLevel);
+    
+    return {
+      world: {
+        description: worldData.world.description,
+        hierarchy: worldData.hierarchy,
+        [pluralTopLevel]: buildEntityHierarchy(topLevel)
+      },
+      player: {
+        inventory: worldData.inventory.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          category: item.category || 'misc',
+          description: item.description || `A ${item.name}`
+        }))
+      },
+      metadata: {
+        version: "1.0",
+        created: timestamp,
+        lastModified: timestamp
+      }
+    };
   };
 
   return (
@@ -68,7 +136,12 @@ export const CompletionScreen = ({ worldData, actions }) => {
 
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-medium">World Inventory</h3>
+          <div>
+            <h3 className="text-xl font-medium">Player Inventory</h3>
+            {hasUnsavedChanges && (
+              <p className="text-sm text-amber-600 mt-1">You have unsaved changes</p>
+            )}
+          </div>
           <div className="flex gap-3">
             <button
               onClick={() => setShowAddItem(true)}
@@ -80,7 +153,7 @@ export const CompletionScreen = ({ worldData, actions }) => {
             <button
               onClick={handleGenerateInventory}
               disabled={generatingInventory}
-              className="button-primary flex items-center gap-1"
+              className="button-secondary flex items-center gap-1"
             >
               {generatingInventory ? (
                 <Loader className="animate-spin" size={16} />
@@ -134,51 +207,94 @@ export const CompletionScreen = ({ worldData, actions }) => {
         )}
 
         {worldData.inventory.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {worldData.inventory.map(item => (
-              <div key={item.id} className="bg-white p-4 rounded-lg border hover:border-gray-300 transition-colors">
-                {editingItem === item.id ? (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) => handleUpdateItem(item.id, { name: e.target.value })}
-                      className="input-field"
-                    />
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm">Quantity:</label>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {worldData.inventory.map(item => (
+                <div key={item.id} className="bg-white p-4 rounded-lg border hover:border-gray-300 transition-colors">
+                  {editingItem === item.id ? (
+                    <div className="space-y-3">
                       <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => handleUpdateItem(item.id, { quantity: parseInt(e.target.value) || 1 })}
-                        className="input-field w-24"
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => handleUpdateItem(item.id, { name: e.target.value })}
+                        className="input-field"
                       />
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm">Quantity:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleUpdateItem(item.id, { quantity: parseInt(e.target.value) || 1 })}
+                          className="input-field w-24"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setEditingItem(null)}
+                        className="button-secondary w-full flex items-center justify-center gap-1"
+                      >
+                        <Save size={16} />
+                        Save Changes
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setEditingItem(null)}
-                      className="button-secondary w-full flex items-center justify-center gap-1"
-                    >
-                      <Save size={16} />
-                      Save Changes
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-gray-500 ml-2">x{item.quantity}</span>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-medium">{item.name}</span>
+                        <span className="text-gray-500 ml-2">x{item.quantity}</span>
+                      </div>
+                      <button
+                        onClick={() => setEditingItem(item.id)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <Edit2 size={16} />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setEditingItem(item.id)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-6 mt-6">
+              <button
+                onClick={handleSaveInventory}
+                disabled={!hasUnsavedChanges}
+                className={`button-primary w-full flex items-center justify-center gap-2 ${
+                  hasUnsavedChanges 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100'
+                }`}
+              >
+                <Save size={16} />
+                {hasUnsavedChanges ? 'Save Inventory Changes' : 'Inventory Saved'}
+              </button>
+              {!hasUnsavedChanges && (
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  All changes are saved
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-medium">Game Engine Data</h3>
+          <button
+            onClick={() => setShowJSON(!showJSON)}
+            className="button-secondary flex items-center gap-2"
+          >
+            <Code size={16} />
+            {showJSON ? 'Hide' : 'Show'} JSON
+          </button>
+        </div>
+
+        {showJSON && (
+          <div className="mt-4">
+            <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-[500px] text-sm">
+              {JSON.stringify(generateGameEngineJSON(), null, 2)}
+            </pre>
           </div>
         )}
       </div>
