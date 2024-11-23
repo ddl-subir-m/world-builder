@@ -33,7 +33,10 @@ export default function WorldBuilder() {
           <CompletionScreen worldData={state.worldData} actions={actions} />
         ) : (
           <GenerationPhase
-            state={state}
+            state={{
+              ...state,
+              levels: state.worldData.hierarchy
+            }}
             actions={actions}
             onWorldCreation={handleWorldCreation}
             onComplete={handleComplete}

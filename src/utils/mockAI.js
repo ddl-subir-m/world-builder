@@ -154,6 +154,31 @@ const mockAI = {
       if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
       return word + 's';
     },
+  
+    enhanceDescription(description) {
+      // Simulate API delay
+      return new Promise(resolve => setTimeout(() => {
+        // Add fantasy-themed embellishments to the description
+        const enhancements = [
+          'ancient magical forces',
+          'mythical creatures',
+          'legendary artifacts',
+          'mysterious prophecies',
+          'forgotten civilizations',
+          'celestial phenomena'
+        ];
+        
+        // Randomly select 2-3 enhancements
+        const selectedEnhancements = enhancements
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 2 + Math.floor(Math.random() * 2));
+        
+        // Create an enhanced description
+        const enhancedDescription = `This realm is marked by ${selectedEnhancements.join(' and ')}, which shape its destiny and influence its inhabitants.`;
+        
+        resolve(enhancedDescription);
+      }, 800));
+    }
   };
 
   export default mockAI;

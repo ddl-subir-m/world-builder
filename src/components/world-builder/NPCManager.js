@@ -68,13 +68,6 @@ export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
         <h4 className="font-medium">Notable NPCs</h4>
         <div className="flex gap-2">
           <button
-            onClick={() => setShowNewNPCForm(true)}
-            className="button-secondary flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Create NPC
-          </button>
-          <button
             onClick={handleGenerateNPC}
             className="button-secondary flex items-center gap-2"
             disabled={isGenerating}
@@ -85,6 +78,13 @@ export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
               <UserPlus size={16} />
             )}
             Generate NPC
+          </button>
+          <button
+            onClick={() => setShowNewNPCForm(true)}
+            className="button-secondary flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Create NPC
           </button>
         </div>
       </div>

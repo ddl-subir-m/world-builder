@@ -71,6 +71,25 @@ export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete })
     );
   }
 
+  if (!state.worldData.world.generated) {
+    return (
+      <WorldCreation
+        worldDescription={state.worldDescription}
+        isGenerating={state.isGenerating}
+        onDescriptionChange={(desc) => actions.setWorldDescription(desc)}
+        onCreateWorld={() => {
+          if (state.worldDescription.length >= 50) {
+            actions.setWorldData(prev => ({
+              ...prev,
+              world: { description: state.worldDescription, generated: true }
+            }));
+            actions.setCurrentLevel('addLevel');
+          }
+        }}
+      />
+    );
+  }
+
   if (!state.showGeneratedEntities) {
     return (
       <div className="space-y-4">
