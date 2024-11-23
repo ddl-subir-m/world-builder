@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Package, Loader, Edit2, Save, Plus, X, Code } from 'lucide-react';
+import { CheckCircle, Package, Loader, Edit2, Save, Plus, X, Code, Play } from 'lucide-react';
 import mockAI from '../../utils/mockAI';
 
 export const CompletionScreen = ({ worldData, actions }) => {
@@ -337,13 +337,27 @@ export const CompletionScreen = ({ worldData, actions }) => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-medium">Game Engine Data</h3>
-          <button
-            onClick={() => setShowJSON(!showJSON)}
-            className="button-secondary flex items-center gap-2"
-          >
-            <Code size={16} />
-            {showJSON ? 'Hide' : 'Show'} JSON
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowJSON(!showJSON)}
+              className="button-secondary flex items-center gap-2"
+            >
+              <Code size={16} />
+              {showJSON ? 'Hide' : 'Show'} JSON
+            </button>
+            <button
+              onClick={() => {
+                // Store game data in localStorage
+                localStorage.setItem('gameEngineData', JSON.stringify(generateGameEngineJSON()));
+                // Navigate to game page
+                window.location.href = '/game';
+              }}
+              className="button-primary bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+            >
+              <Play size={16} />
+              Start Game
+            </button>
+          </div>
         </div>
 
         {showJSON && (

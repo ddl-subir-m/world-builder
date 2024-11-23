@@ -2,28 +2,26 @@ import React, { useState } from 'react';
 import { Globe, Loader, Wand2 } from 'lucide-react';
 import mockAI from '../../utils/mockAI';
 
-export const WorldCreation = ({ 
-  worldDescription, 
-  isGenerating, 
-  onDescriptionChange, 
-  onCreateWorld 
-}) => {
+export const WorldCreation = ({ isGenerating, onCreateWorld }) => {
+  const [description, setDescription] = useState('');
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   const handleEnhanceDescription = async () => {
     setIsEnhancing(true);
     try {
-      onDescriptionChange('');
-      const enhancedDescription = await mockAI.enhanceDescription(worldDescription);
-      onDescriptionChange(enhancedDescription);
+      const enhancedDescription = await mockAI.enhanceDescription(description);
+      setDescription(enhancedDescription);
     } catch (error) {
       console.error('Failed to enhance description:', error);
-      onDescriptionChange(worldDescription);
     }
     setIsEnhancing(false);
   };
 
-  const isDescriptionValid = worldDescription.length >= 50;
+  const isDescriptionValid = description.length >= 50;
+
+  const handleCreateWorld = () => {
+    onCreateWorld(description);
+  };
 
   return (
     <div className="space-y-4">
@@ -34,8 +32,9 @@ export const WorldCreation = ({
         <textarea
           className="input-field h-48 resize-none"
           placeholder="Describe your world in rich detail..."
-          value={worldDescription}
-          onChange={(e) => onDescriptionChange(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={isGenerating}
         />
         <button
           onClick={handleEnhanceDescription}
@@ -59,7 +58,7 @@ export const WorldCreation = ({
         </button>
       </div>
       <button
-        onClick={onCreateWorld}
+        onClick={handleCreateWorld}
         disabled={isGenerating || !isDescriptionValid}
         className={`button-primary w-full flex items-center justify-center gap-2 ${
           isDescriptionValid

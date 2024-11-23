@@ -47,12 +47,19 @@ export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete })
     }));
   };
 
-
-  if (state.currentLevel === 'world' && !state.worldData.world.generated) {
-    return <WorldCreation {...{ worldDescription: state.worldDescription, isGenerating: state.isGenerating, 
-                              onDescriptionChange: actions.setWorldDescription, onCreateWorld: onWorldCreation }} />;
+  // World Creation Phase
+  if (state.currentLevel === 'world' || !state.worldData.world.generated) {
+    return (
+      <WorldCreation 
+        worldDescription={state.worldDescription}
+        isGenerating={state.isGenerating}
+        onDescriptionChange={actions.setWorldDescription}
+        onCreateWorld={onWorldCreation}
+      />
+    );
   }
 
+  // Add Level Phase
   if (state.currentLevel === 'addLevel') {
     return (
       <AddLevelPrompt
@@ -67,25 +74,6 @@ export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete })
         }}
         onComplete={() => actions.setIsComplete(true)}
         worldData={state.worldData}
-      />
-    );
-  }
-
-  if (!state.worldData.world.generated) {
-    return (
-      <WorldCreation
-        worldDescription={state.worldDescription}
-        isGenerating={state.isGenerating}
-        onDescriptionChange={(desc) => actions.setWorldDescription(desc)}
-        onCreateWorld={() => {
-          if (state.worldDescription.length >= 50) {
-            actions.setWorldData(prev => ({
-              ...prev,
-              world: { description: state.worldDescription, generated: true }
-            }));
-            actions.setCurrentLevel('addLevel');
-          }
-        }}
       />
     );
   }

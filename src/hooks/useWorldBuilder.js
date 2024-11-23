@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import mockAI from '../utils/mockAI';
 
 export const useWorldBuilder = () => {
@@ -13,7 +13,6 @@ export const useWorldBuilder = () => {
   });
   const [currentLevel, setCurrentLevel] = useState('world');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [worldDescription, setWorldDescription] = useState('');
   const [entityCount, setEntityCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showGeneratedEntities, setShowGeneratedEntities] = useState(false);
@@ -79,7 +78,6 @@ export const useWorldBuilder = () => {
       worldData,
       currentLevel,
       isGenerating,
-      worldDescription,
       entityCount,
       isComplete,
       showGeneratedEntities
@@ -89,7 +87,6 @@ export const useWorldBuilder = () => {
       setWorldData,
       setCurrentLevel,
       setIsGenerating,
-      setWorldDescription,
       setEntityCount,
       setIsComplete,
       setShowGeneratedEntities,
