@@ -190,6 +190,7 @@ export const GenerationPhase = ({ state, actions, onWorldCreation, onComplete })
             <NPCManager
               entity={entity}
               entityType={state.currentLevel}
+              worldData={state.worldData}
               onNPCsUpdate={(npcs) => {
                 handleEntityUpdate(entity.id, { npcs });
               }}

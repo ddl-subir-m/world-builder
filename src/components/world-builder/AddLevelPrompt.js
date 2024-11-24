@@ -12,13 +12,17 @@ export const AddLevelPrompt = ({ onAddLevel, onComplete, worldData }) => {
   const loadSuggestions = useCallback(async () => {
     setLoadingSuggestions(true);
     try {
-      const suggestedLevels = await mockAI.suggestLevels({ hierarchy: worldData.hierarchy });
+      const suggestedLevels = await mockAI.suggestLevels({
+        worldData: worldData,
+        hierarchy: worldData.hierarchy,
+        currentLevel: worldData.hierarchy[worldData.hierarchy.length - 1]
+      });
       setSuggestions(suggestedLevels);
     } catch (error) {
       console.error('Failed to load suggestions:', error);
     }
     setLoadingSuggestions(false);
-  }, [worldData.hierarchy]);
+  }, [worldData]);
 
   useEffect(() => {
     loadSuggestions();

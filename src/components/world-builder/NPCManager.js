@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { UserPlus, Edit2, Save, Trash2, Plus, X, Loader } from 'lucide-react';
 import mockAI from '../../utils/mockAI';
 
-export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
+export const NPCManager = ({ entity, entityType, onNPCsUpdate, worldData }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingNPC, setEditingNPC] = useState(null);
   const [npcs, setNPCs] = useState(entity.npcs || []);
   const [showNewNPCForm, setShowNewNPCForm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [newNPC, setNewNPC] = useState({
     name: '',
     role: '',
@@ -17,12 +18,25 @@ export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
 
   const handleGenerateNPC = async () => {
     setIsGenerating(true);
-    const newNPC = await mockAI.generateNPCs(entityType, entity.name);
+    try {
+      const newNPC = await mockAI.generateNPCs(
+        entityType, 
+        entity.name,
+        worldData,
+        npcs
+      );
+      
+      const updatedNPCs = [...npcs, newNPC];
+      setNPCs(updatedNPCs);
+      onNPCsUpdate(updatedNPCs);
+      
+      // Show success message
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000); // Hide after 3 seconds
+    } catch (error) {
+      console.error('Failed to generate NPC:', error);
+    }
     setIsGenerating(false);
-    
-    const updatedNPCs = [...npcs, newNPC];
-    setNPCs(updatedNPCs);
-    onNPCsUpdate(updatedNPCs);
   };
 
   const handleUpdateNPC = (npcId, updates) => {
@@ -67,6 +81,12 @@ export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
       <div className="flex justify-between items-center">
         <h4 className="font-medium">Notable NPCs</h4>
         <div className="flex gap-2">
+          {showSuccess && (
+            <div className="text-sm text-green-600 bg-green-50 py-1 px-3 rounded-full flex items-center gap-2 animate-fade-in">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              NPC created successfully
+            </div>
+          )}
           <button
             onClick={handleGenerateNPC}
             className="button-secondary flex items-center gap-2"
@@ -214,11 +234,6 @@ export const NPCManager = ({ entity, entityType, onNPCsUpdate }) => {
                 {npc.personality && (
                   <p className="text-sm mt-1 text-gray-600">
                     <strong>Personality:</strong> {npc.personality}
-                  </p>
-                )}
-                {npc.goal && (
-                  <p className="text-sm mt-1 text-gray-600">
-                    <strong>Goals:</strong> {npc.goal}
                   </p>
                 )}
               </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import mockAI from '../utils/mockAI';
 
 export const useWorldBuilder = () => {
@@ -21,16 +21,46 @@ export const useWorldBuilder = () => {
     const singularLevel = level.endsWith('s') ? level.slice(0, -1) : level;
     const entities = [];
     
+    console.log('Starting generation for level:', level, 'Count:', count);
+    
     for (let i = 0; i < count; i++) {
-      const name = `${singularLevel.charAt(0).toUpperCase() + singularLevel.slice(1)} ${i + 1}`;
-      const description = await mockAI.generateEntityDescription(singularLevel, name);
-      entities.push({
-        id: `${level}-${i}`,
-        name,
-        description
-      });
+      try {
+        console.log(`Generating entity ${i + 1} of ${count}`);
+        
+        const worldContext = {
+          world: worldData.world,
+          hierarchy: worldData.hierarchy,
+          entities: worldData.entities,
+          associations: worldData.associations
+        };
+
+        // Generate name
+        const name = await mockAI.generateEntityName(singularLevel, worldContext, i);
+        console.log('Generated name:', name);
+
+        // Generate description
+        const description = await mockAI.generateEntityDescription(singularLevel, name, worldContext);
+        console.log('Generated description:', description);
+        
+        entities.push({
+          id: `${level}-${i}`,
+          name,
+          description,
+          needsDescription: false
+        });
+      } catch (error) {
+        console.error(`Failed to generate entity ${i + 1}:`, error);
+        
+        entities.push({
+          id: `${level}-${i}`,
+          name: `${singularLevel} ${i + 1}`, // Fallback name
+          description: '',
+          needsDescription: true
+        });
+      }
     }
     
+    console.log('Generated entities:', entities);
     return entities;
   };
 

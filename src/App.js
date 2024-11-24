@@ -15,7 +15,10 @@ export default function App() {
     actions.setIsGenerating(false);
     actions.setWorldData(prev => ({
       ...prev,
-      world: { description, generated: true },
+      world: { 
+        description, 
+        generated: true 
+      },
       hierarchy: [],
       entities: {}
     }));

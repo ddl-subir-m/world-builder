@@ -15,9 +15,17 @@ export const CompletionScreen = ({ worldData, actions }) => {
 
   const handleGenerateInventory = async () => {
     setGeneratingInventory(true);
-    const newInventory = await actions.generateInventory(worldData.world.description);
-    setHasUnsavedChanges(true);
-    actions.updateInventory(newInventory);
+    try {
+      const newInventory = await mockAI.generateInventory({
+        world: worldData.world,
+        hierarchy: worldData.hierarchy,
+        entities: worldData.entities
+      });
+      setHasUnsavedChanges(true);
+      actions.updateInventory(newInventory);
+    } catch (error) {
+      console.error('Failed to generate inventory:', error);
+    }
     setGeneratingInventory(false);
   };
 
@@ -174,12 +182,9 @@ export const CompletionScreen = ({ worldData, actions }) => {
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-2">{npc.description}</p>
-              <div className="mt-3 space-y-1">
+              <div className="mt-3">
                 <p className="text-sm">
                   <span className="text-gray-500">Personality:</span> {npc.personality}
-                </p>
-                <p className="text-sm">
-                  <span className="text-gray-500">Goal:</span> {npc.goal}
                 </p>
               </div>
             </div>
