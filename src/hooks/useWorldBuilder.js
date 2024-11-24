@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import mockAI from '../utils/mockAI';
+import mockAI from '../utils/gameAI';
+import { isEntityNameUnique } from '../utils/validation';
 
 export const useWorldBuilder = () => {
   const [currentPhase, setCurrentPhase] = useState('generation');
@@ -34,9 +35,22 @@ export const useWorldBuilder = () => {
           associations: worldData.associations
         };
 
-        // Generate name
-        const name = await mockAI.generateEntityName(singularLevel, worldContext, i);
-        console.log('Generated name:', name);
+        // Generate name with uniqueness check
+        let name;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        do {
+          name = await mockAI.generateEntityName(singularLevel, worldContext, i);
+          attempts++;
+          
+          if (attempts === maxAttempts) {
+            name = `${singularLevel} ${Math.random().toString(36).substr(2, 6)}`;
+            break;
+          }
+        } while (!isEntityNameUnique(name, worldData.entities));
+
+        console.log('Generated unique name:', name);
 
         // Generate description
         const description = await mockAI.generateEntityDescription(singularLevel, name, worldContext);
@@ -51,9 +65,12 @@ export const useWorldBuilder = () => {
       } catch (error) {
         console.error(`Failed to generate entity ${i + 1}:`, error);
         
+        // Generate fallback name with guaranteed uniqueness
+        const fallbackName = `${singularLevel} ${Math.random().toString(36).substr(2, 6)}`;
+        
         entities.push({
           id: `${level}-${i}`,
-          name: `${singularLevel} ${i + 1}`, // Fallback name
+          name: fallbackName,
           description: '',
           needsDescription: true
         });

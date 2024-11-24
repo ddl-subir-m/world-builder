@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserPlus, Edit2, Save, Trash2, Plus, X, Loader } from 'lucide-react';
-import mockAI from '../../utils/mockAI';
+import mockAI from '../../utils/gameAI';
 
 export const NPCManager = ({ entity, entityType, onNPCsUpdate, worldData }) => {
   const [isGenerating, setIsGenerating] = useState(false);

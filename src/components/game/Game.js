@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, Loader, Package } from 'lucide-react';
-import mockAI from '../../utils/mockAI';
+import mockAI from '../../utils/gameAI';
 
 export const Game = () => {
   const navigate = useNavigate();
@@ -185,8 +185,8 @@ export const Game = () => {
             <h3 className="font-medium mb-3">Inventory</h3>
             {gameData.inventory?.length > 0 ? (
               <div className="grid gap-3">
-                {gameData.inventory.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start border-b pb-2">
+                {gameData.inventory.map((item, index) => (
+                  <div key={item.id || index} className="flex justify-between items-start border-b pb-2">
                     <div>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-gray-600">{item.description}</div>

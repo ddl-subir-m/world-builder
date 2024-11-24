@@ -1,12 +1,13 @@
 import OpenAI from 'openai';
 import { AI_PROMPTS } from '../config/aiPrompts';
+import { AI_MODELS, AI_CONFIG } from '../config/aiConfig';
 
 const openai = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
-const mockAI = {
+const gameAI = {
     async suggestLevels(context) {
       try {
         console.log('Full context received:', context);
@@ -24,7 +25,7 @@ const mockAI = {
         }
 
         const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: AI_MODELS.levelSuggestions,
           messages: [
             AI_PROMPTS.levelSuggestions,
             {
@@ -36,8 +37,8 @@ const mockAI = {
               })
             }
           ],
-          temperature: 0.7,
-          max_tokens: 100,
+          temperature: AI_CONFIG.temperature.balanced,
+          max_tokens: AI_CONFIG.maxTokens.medium,
           response_format: { type: "json_object" }
         });
 
@@ -59,7 +60,7 @@ const mockAI = {
         console.log('World context:', JSON.stringify(worldContext, null, 2));
         
         const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: AI_MODELS.entityGeneration,
           messages: [
             AI_PROMPTS.entityName,
             {
@@ -72,8 +73,8 @@ const mockAI = {
               })
             }
           ],
-          temperature: 0.8,
-          max_tokens: 30,
+          temperature: AI_CONFIG.temperature.creative,
+          max_tokens: AI_CONFIG.maxTokens.short,
           presence_penalty: 0.6,
           frequency_penalty: 0.8
         });
@@ -129,7 +130,7 @@ const mockAI = {
     async generateInventory(worldContext) {
       try {
         const response = await openai.chat.completions.create({
-          model: "gpt-4-turbo-preview",
+          model: "gpt-4o-mini",
           messages: [
             AI_PROMPTS.inventoryGeneration,
             {
@@ -197,36 +198,24 @@ Requirements:
 
       try {
         const response = await openai.chat.completions.create({
-          model: "gpt-4-turbo-preview",
+          model: AI_MODELS.npcGeneration,
           messages: [
-            {
-              role: "system",
-              content: "You are a fantasy character creator. You must respond with valid JSON only."
-            },
+            AI_PROMPTS.npcGeneration,
             {
               role: "user",
               content: `Create a detailed NPC for ${entityName} (a ${entityType}) following this exact JSON structure:
-{
-  "name": "Unique fantasy name",
-  "role": "Character's role or profession",
-  "description": "Physical appearance and notable features",
-  "personality": "Character traits and mannerisms",
-  "background": "Brief history",
-  "desires": "Hopes and ambitions",
-  "fears": "Personal fears and worries",
-  "goal": "Current primary motivation"
-}
+              ${AI_PROMPTS.npcGenerationPrompt.content}
 
-Requirements:
-- Character should fit the world context: ${worldContext.world.description}
-- Name must be unique (existing NPCs: ${existingNPCs.map(npc => npc.name).join(', ')})
-- Keep each field concise (1-2 sentences)
-- Ensure character fits the location's theme
-- Return only the JSON object, no additional text`
+              Requirements:
+              - Character should fit the world context: ${worldContext.world.description}
+              - Name must be unique (existing NPCs: ${existingNPCs.map(npc => npc.name).join(', ')})
+              - Keep each field concise (1-2 sentences)
+              - Ensure character fits the location's theme
+              - Return only the JSON object, no additional text`
             }
           ],
-          temperature: 0.7,
-          max_tokens: 500,
+          temperature: AI_CONFIG.temperature.balanced,
+          max_tokens: AI_CONFIG.maxTokens.veryLong,
           response_format: { type: "json_object" }
         });
 
@@ -269,36 +258,30 @@ Requirements:
       }
     },
   
-    // generateName() {
-    //   const firstNames = ['Aldrich', 'Beatrice', 'Cedric', 'Diana', 'Edmund', 'Freya', 'Gareth', 'Helena'];
-    //   const lastNames = ['Blackwood', 'Stormwind', 'Ironheart', 'Silverleaf', 'Dawnweaver', 'Nightshade'];
-      
-    //   return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-    // },
   
-    pluralize(word) {
-      // Special cases dictionary
-      const specialCases = {
-        'empire': 'empires',
-        'state': 'states',
-        'city': 'cities',
-        'country': 'countries',
-        'territory': 'territories',
-        'duchy': 'duchies',
-        'colony': 'colonies',
-        'municipality': 'municipalities',
-        'principality': 'principalities'
-      };
+    async pluralize(word) {
+      try {
+        const response = await openai.chat.completions.create({
+          model: AI_MODELS.default,
+          messages: [
+            AI_PROMPTS.pluralizer,
+            {
+              role: "user",
+              content: word
+            }
+          ],
+          temperature: AI_CONFIG.temperature.precise,
+          max_tokens: AI_CONFIG.maxTokens.short
+        });
 
-      // Return from special cases if it exists
-      if (specialCases[word.toLowerCase()]) {
-        return specialCases[word.toLowerCase()];
+        return response.choices[0].message.content.trim();
+      } catch (error) {
+        console.error('OpenAI Pluralization Error:', error);
+        // Fallback to basic pluralization rules
+        if (word.endsWith('s')) return word;
+        if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
+        return word + 's';
       }
-
-      // General rules
-      if (word.endsWith('s')) return word; // Already plural
-      if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
-      return word + 's';
     },
   
     async enhanceDescription(description) {
@@ -306,18 +289,7 @@ Requirements:
         const response = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
-            {
-              role: "system",
-              content: `You are a fantasy world description enhancer. 
-              Take the provided world description and enhance it by adding 2-3 fantasy elements.
-              Requirements:
-              - Keep the original meaning and tone
-              - Add mystical or magical elements naturally
-              - Focus on world-building elements
-              - Return only the enhanced description, no explanations
-              - Keep similar length to original
-              - Maintain second-person perspective if present`
-            },
+            AI_PROMPTS.descriptionEnhancer,
             {
               role: "user",
               content: description
@@ -332,22 +304,7 @@ Requirements:
         return response.choices[0].message.content;
       } catch (error) {
         console.error('OpenAI API Error:', error);
-        
-        // Fallback to template-based enhancement if API fails
-        const enhancements = [
-          'ancient magical forces',
-          'mythical creatures',
-          'legendary artifacts',
-          'mysterious prophecies',
-          'forgotten civilizations',
-          'celestial phenomena'
-        ];
-        
-        const selectedEnhancements = enhancements
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 2 + Math.floor(Math.random() * 2));
-        
-        return `${description} This realm is marked by ${selectedEnhancements.join(' and ')}, which shape its destiny and influence its inhabitants.`;
+        return error.message;
       }
     },
   
@@ -376,12 +333,7 @@ Requirements:
       } catch (error) {
         console.error('OpenAI API Error:', error);
         
-        // Fallback to template-based response if API fails
-        const templates = [
-          `You find yourself in ${gameData.world.description}. As a newcomer to these lands, your arrival has been noted by the local inhabitants, who regard you with a mixture of curiosity and caution.`,
-          `Standing at the threshold of ${gameData.world.description}, you feel the weight of destiny upon your shoulders. The air is thick with possibility as you survey the lands before you.`
-        ];
-        return templates[Math.floor(Math.random() * templates.length)];
+        return error.message;
       }
     },
   
@@ -392,6 +344,10 @@ Requirements:
           model: "gpt-4o-mini",
           messages: [
             AI_PROMPTS.gameMaster,
+            ...messageHistory.slice(-5).map(msg => ({
+              role: msg.type === 'user' ? 'user' : 'assistant',
+              content: msg.content
+            })),
             {
               role: "user",
               content: JSON.stringify({
@@ -407,7 +363,6 @@ Requirements:
         });
 
         const aiResponse = response.choices[0].message.content;
-
         // Then check for inventory changes based on the AI's response
         const inventoryChanges = await this.inventoryAssistant(gameData, userMessage, aiResponse);
         
@@ -417,16 +372,9 @@ Requirements:
         };
       } catch (error) {
         console.error('OpenAI API Error:', error);
-        
-        // Enhanced fallback responses
-        const fallbackEndings = [
-          `The Academy halls stretch before you - the bustling Great Hall echoes with activity to the north, while the serene Meditation Gardens beckon from the east. Through a window, you spot movement in the distant Astronomy Tower. What will you do?`,
-          `As the magical timepiece strikes ${new Date().getHours()}, you notice Sage Evelyn organizing scrolls in the library, while Master Theron appears to be conducting an experiment in his workshop. What will you do?`,
-          `A mysterious magical resonance emanates from deeper within the Academy, and whispers of unusual activity in the Underground Archives have caught your attention. What will you do?`
-        ];
-        
+
         return {
-          content: `You attempt to ${userMessage}. ${fallbackEndings[Math.floor(Math.random() * fallbackEndings.length)]}`,
+          content: error.message,
           inventoryChanges: []
         };
       }
@@ -443,32 +391,7 @@ Requirements:
         const response = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
-            {
-              role: "system",
-              content: `You are an inventory management assistant.
-              Analyze the player action and game response to determine if any items should be added or removed.
-              Look for explicit mentions of items being picked up, dropped, removed, or discarded.
-              
-              Return a JSON response in this exact format:
-              {
-                "changes": [
-                  {
-                    "item": "exact item name from inventory",
-                    "quantity": number (-1 for removal, +1 for addition)
-                  }
-                ]
-              }
-              
-              Example for removing a wand:
-              {
-                "changes": [
-                  {
-                    "item": "Novice Duelist Wand",
-                    "quantity": -1
-                  }
-                ]
-              }`
-            },
+            AI_PROMPTS.inventoryAssistant,
             {
               role: "user",
               content: JSON.stringify({
@@ -497,4 +420,4 @@ Requirements:
     }
   };
 
-  export default mockAI;
+  export default gameAI;

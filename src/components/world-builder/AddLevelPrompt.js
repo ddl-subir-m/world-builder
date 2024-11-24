@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Loader } from 'lucide-react';
-import mockAI from '../../utils/mockAI';
+import mockAI from '../../utils/gameAI';
 import { isNameUnique } from '../../utils/validation';
 
 export const AddLevelPrompt = ({ onAddLevel, onComplete, worldData }) => {

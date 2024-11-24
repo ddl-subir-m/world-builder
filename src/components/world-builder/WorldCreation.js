@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, Loader, Wand2 } from 'lucide-react';
-import mockAI from '../../utils/mockAI';
+import mockAI from '../../utils/gameAI';
 
 export const WorldCreation = ({ isGenerating, onCreateWorld }) => {
   const [description, setDescription] = useState('');

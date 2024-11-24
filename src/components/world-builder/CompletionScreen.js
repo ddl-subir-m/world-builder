@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Package, Loader, Edit2, Save, Plus, X, Code, Play } from 'lucide-react';
-import mockAI from '../../utils/mockAI';
+import gameAI from '../../utils/gameAI';
 
 export const CompletionScreen = ({ worldData, actions }) => {
   const [generatingInventory, setGeneratingInventory] = useState(false);
@@ -12,11 +12,28 @@ export const CompletionScreen = ({ worldData, actions }) => {
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showJSON, setShowJSON] = useState(false);
+  const [pluralizedHierarchy, setPluralizedHierarchy] = useState([]);
+
+  useEffect(() => {
+    const pluralizeHierarchy = async () => {
+      try {
+        const pluralized = await Promise.all(
+          worldData.hierarchy.map(level => gameAI.pluralize(level))
+        );
+        setPluralizedHierarchy(pluralized);
+      } catch (error) {
+        console.error('Failed to pluralize hierarchy:', error);
+        setPluralizedHierarchy(worldData.hierarchy);
+      }
+    };
+
+    pluralizeHierarchy();
+  }, [worldData.hierarchy]);
 
   const handleGenerateInventory = async () => {
     setGeneratingInventory(true);
     try {
-      const newInventory = await mockAI.generateInventory({
+      const newInventory = await gameAI.generateInventory({
         world: worldData.world,
         hierarchy: worldData.hierarchy,
         entities: worldData.entities
@@ -56,14 +73,14 @@ export const CompletionScreen = ({ worldData, actions }) => {
     setHasUnsavedChanges(false);
   };
 
-  const generateGameEngineJSON = () => {
+  const generateGameEngineJSON = async () => {
     const timestamp = new Date().toISOString();
     
     // Helper function to build the entity hierarchy
-    const buildEntityHierarchy = (level, parentEntity = null) => {
+    const buildEntityHierarchy = async (level, parentEntity = null) => {
       const entities = worldData.entities[level] || [];
       
-      return entities.map(entity => {
+      return Promise.all(entities.map(async entity => {
         // Find the next level in hierarchy
         const levelIndex = worldData.hierarchy.indexOf(level);
         const nextLevel = worldData.hierarchy[levelIndex + 1];
@@ -83,23 +100,23 @@ export const CompletionScreen = ({ worldData, actions }) => {
         
         // If there's a next level, add its plural name as a key with nested entities
         if (nextLevel) {
-          const pluralKey = mockAI.pluralize(nextLevel);
-          entityData[pluralKey] = buildEntityHierarchy(nextLevel, entity);
+          const pluralKey = await gameAI.pluralize(nextLevel);
+          entityData[pluralKey] = await buildEntityHierarchy(nextLevel, entity);
         }
         
         return entityData;
-      });
+      }));
     };
 
     // Start building from the top level
     const topLevel = worldData.hierarchy[0];
-    const pluralTopLevel = mockAI.pluralize(topLevel);
+    const pluralTopLevel = await gameAI.pluralize(topLevel);
     
     return {
       world: {
         description: worldData.world.description,
         hierarchy: worldData.hierarchy,
-        [pluralTopLevel]: buildEntityHierarchy(topLevel)
+        [pluralTopLevel]: await buildEntityHierarchy(topLevel)
       },
       player: {
         inventory: worldData.inventory.map(item => ({
@@ -161,7 +178,7 @@ export const CompletionScreen = ({ worldData, actions }) => {
           <div className="mt-6">
             <h3 className="font-medium mb-2">World Hierarchy:</h3>
             <p className="text-gray-600 bg-gray-50 py-2 px-4 rounded-md inline-block">
-              {worldData.hierarchy.map(level => mockAI.pluralize(level)).join(' → ')}
+              {pluralizedHierarchy.join(' → ')}
             </p>
           </div>
         </div>
@@ -351,9 +368,10 @@ export const CompletionScreen = ({ worldData, actions }) => {
               {showJSON ? 'Hide' : 'Show'} JSON
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 // Store game data in localStorage
-                localStorage.setItem('gameEngineData', JSON.stringify(generateGameEngineJSON()));
+                const gameData = await generateGameEngineJSON();
+                localStorage.setItem('gameEngineData', JSON.stringify(gameData));
                 // Navigate to game page
                 window.location.href = '/game';
               }}
